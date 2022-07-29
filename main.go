@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,15 +16,20 @@ import (
 func logMessage(severity cg.DebugSeverity, message string, data string) {
 	defer cli.PrintColor(cli.Cyan, "%s%s%s", strings.Repeat("-", 39), time.Now().Format("2006-01-02 15:04:05"), strings.Repeat("-", 40))
 
+	var color cli.Color
 	switch severity {
 	case cg.DebugTrace:
-		cli.Print("\x1b[2mTRACE: %s", message)
+		color = "\x1b[2m"
+		cli.PrintColor(color, "TRACE: %s", message)
 	case cg.DebugInfo:
-		cli.Print("INFO: %s", message)
+		color = ""
+		cli.PrintColor(color, "INFO: %s", message)
 	case cg.DebugWarning:
-		cli.Print("\x1b[33mWARNING: %s", message)
+		color = "\x1b[33m"
+		cli.PrintColor(color, "WARNING: %s", message)
 	case cg.DebugError:
-		cli.Print("\x1b[1;31mERROR: %s", message)
+		color = "\x1b[1;31m"
+		cli.PrintColor(color, "ERROR: %s", message)
 	}
 	if data == "" {
 		return
@@ -31,16 +37,20 @@ func logMessage(severity cg.DebugSeverity, message string, data string) {
 
 	formatted, err := json.MarshalIndent(json.RawMessage(data), "", "  ")
 	if err == nil {
-		cli.PrintColor("", string(formatted))
+		cli.PrintColor(color, string(formatted))
 	} else {
-		cli.PrintColor("", data)
+		cli.PrintColor(color, data)
 	}
 }
 
 func debugServer(socket *cg.DebugSocket) error {
 	cli.Clear()
 	cli.PrintColor(cli.CyanBold, "%s%s%s", strings.Repeat("=", 40), " Server Debug Log ", strings.Repeat("=", 40))
-	return socket.DebugServer()
+	err := socket.DebugServer()
+	if err != nil {
+		return errors.New("failed to connect to server")
+	}
+	return nil
 }
 
 func debugGame(socket *cg.DebugSocket) error {
@@ -50,7 +60,11 @@ func debugGame(socket *cg.DebugSocket) error {
 	}
 	cli.Clear()
 	cli.PrintColor(cli.CyanBold, "%s%s%s", strings.Repeat("=", 40), "= Game Debug Log =", strings.Repeat("=", 40))
-	return socket.DebugGame(gameId)
+	err = socket.DebugGame(gameId)
+	if err != nil {
+		return errors.New("failed to connect to server")
+	}
+	return nil
 }
 
 func debugPlayer(socket *cg.DebugSocket) error {
@@ -84,7 +98,11 @@ func debugPlayer(socket *cg.DebugSocket) error {
 
 	cli.Clear()
 	cli.PrintColor(cli.CyanBold, "%s%s%s", strings.Repeat("=", 40), " Player Debug Log ", strings.Repeat("=", 40))
-	return socket.DebugPlayer(gameId, playerId, playerSecret)
+	err = socket.DebugPlayer(gameId, playerId, playerSecret)
+	if err != nil {
+		return errors.New("failed to connect to server")
+	}
+	return nil
 }
 
 func selectFromSessionStorage() (gameId string, playerId string, playerSecret string, err error) {
