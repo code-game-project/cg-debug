@@ -1,10 +1,11 @@
 # cg-debug
+![CG Version](https://img.shields.io/badge/Protocol-v0.7-orange)
 
 cg-debug is a simple CLI-based frontend for CodeGame debug endpoints.
 
 ## License
 
-Copyright (c) 2022 Julian Hofmann
+Copyright (c) 2022 CodeGame Contributors (https://code-game.org/contributors)
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
