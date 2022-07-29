@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,6 +13,8 @@ import (
 	"github.com/adrg/xdg"
 	"github.com/code-game-project/go-client/cg"
 )
+
+var gameSessionDir = filepath.Join(xdg.DataHome, "codegame", "games")
 
 func logMessage(severity cg.DebugSeverity, message string, data string) {
 	defer cli.PrintColor(cli.Cyan, "%s%s%s", strings.Repeat("-", 39), time.Now().Format("2006-01-02 15:04:05"), strings.Repeat("-", 40))
@@ -68,16 +71,20 @@ func debugGame(socket *cg.DebugSocket) error {
 }
 
 func debugPlayer(socket *cg.DebugSocket) error {
-	yes, err := cli.YesNo("Select player from session storage", false)
-	if err != nil {
-		return err
+	var fromSessionStorage bool
+	var err error
+	if _, err := os.Stat(filepath.Join(gameSessionDir, url.PathEscape(socket.URL()))); err == nil {
+		fromSessionStorage, err = cli.YesNo("Select player from session storage", false)
+		if err != nil {
+			return err
+		}
 	}
 
 	var gameId string
 	var playerId string
 	var playerSecret string
-	if yes {
-		gameId, playerId, playerSecret, err = selectFromSessionStorage()
+	if fromSessionStorage {
+		gameId, playerId, playerSecret, err = selectFromSessionStorage(socket)
 		if err != nil {
 			return err
 		}
@@ -105,28 +112,8 @@ func debugPlayer(socket *cg.DebugSocket) error {
 	return nil
 }
 
-func selectFromSessionStorage() (gameId string, playerId string, playerSecret string, err error) {
-	gamesPath := filepath.Join(xdg.DataHome, "codegame", "games")
-
-	gameDirs, err := os.ReadDir(gamesPath)
-	if err != nil {
-		return "", "", "", err
-	}
-
-	games := make([]string, 0, len(gameDirs))
-	for _, dir := range gameDirs {
-		if dir.IsDir() {
-			games = append(games, dir.Name())
-		}
-	}
-
-	index, err := cli.Select("Game:", games)
-	if err != nil {
-		return "", "", "", err
-	}
-	game := games[index]
-
-	userFiles, err := os.ReadDir(filepath.Join(gamesPath, game))
+func selectFromSessionStorage(socket *cg.DebugSocket) (gameId string, playerId string, playerSecret string, err error) {
+	userFiles, err := os.ReadDir(filepath.Join(gameSessionDir, url.PathEscape(socket.URL())))
 	if err != nil {
 		return "", "", "", err
 	}
@@ -137,12 +124,12 @@ func selectFromSessionStorage() (gameId string, playerId string, playerSecret st
 		}
 	}
 
-	index, err = cli.Select("User:", users)
+	index, err := cli.Select("User:", users)
 	if err != nil {
 		return "", "", "", err
 	}
 
-	sessionData, err := os.ReadFile(filepath.Join(gamesPath, game, users[index]+".json"))
+	sessionData, err := os.ReadFile(filepath.Join(gameSessionDir, url.PathEscape(socket.URL()), users[index]+".json"))
 	if err != nil {
 		return "", "", "", err
 	}
