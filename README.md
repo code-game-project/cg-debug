@@ -1,6 +1,6 @@
 # cg-debug
 
-cg-debug is a simple CLI based frontend for CodeGame debug frontends.
+cg-debug is a simple CLI-based frontend for CodeGame debug endpoints.
 
 ## License
 
