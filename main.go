@@ -12,6 +12,7 @@ import (
 	"github.com/Bananenpro/cli"
 	"github.com/adrg/xdg"
 	"github.com/code-game-project/go-client/cg"
+	"github.com/code-game-project/go-utils/sessions"
 )
 
 var gameSessionDir = filepath.Join(xdg.DataHome, "codegame", "games")
@@ -113,15 +114,9 @@ func debugPlayer(socket *cg.DebugSocket) error {
 }
 
 func selectFromSessionStorage(socket *cg.DebugSocket) (gameId string, playerId string, playerSecret string, err error) {
-	userFiles, err := os.ReadDir(filepath.Join(gameSessionDir, url.PathEscape(socket.URL())))
+	users, err := sessions.ListUsernames(socket.URL())
 	if err != nil {
 		return "", "", "", err
-	}
-	users := make([]string, 0, len(userFiles))
-	for _, dir := range userFiles {
-		if !dir.IsDir() && strings.HasSuffix(dir.Name(), ".json") {
-			users = append(users, string(dir.Name()[:len(dir.Name())-5]))
-		}
 	}
 
 	index, err := cli.Select("User:", users)
