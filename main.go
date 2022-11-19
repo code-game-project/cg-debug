@@ -66,7 +66,7 @@ func debugGame(socket *cg.DebugSocket) error {
 	cli.PrintColor(cli.CyanBold, "%s%s%s", strings.Repeat("=", 40), "= Game Debug Log =", strings.Repeat("=", 40))
 	err = socket.DebugGame(gameId)
 	if err != nil {
-		return errors.New("failed to connect to server")
+		return errors.New("failed to connect to game")
 	}
 	return nil
 }
@@ -108,7 +108,7 @@ func debugPlayer(socket *cg.DebugSocket) error {
 	cli.PrintColor(cli.CyanBold, "%s%s%s", strings.Repeat("=", 40), " Player Debug Log ", strings.Repeat("=", 40))
 	err = socket.DebugPlayer(gameId, playerId, playerSecret)
 	if err != nil {
-		return errors.New("failed to connect to server")
+		return errors.New("failed to connect to player")
 	}
 	return nil
 }
@@ -117,6 +117,10 @@ func selectFromSessionStorage(socket *cg.DebugSocket) (gameId string, playerId s
 	users, err := sessions.ListUsernames(socket.URL())
 	if err != nil {
 		return "", "", "", err
+	}
+
+	if len(users) == 0 {
+		return "", "", "", errors.New("no sessions available")
 	}
 
 	index, err := cli.Select("User:", users)
